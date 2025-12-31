@@ -1,7 +1,7 @@
 ﻿# LLM Sentinel for Vertex AI 
 
 ### [LIVE DATADOG DASHBOARD]
-> **(PASTE YOUR SHARED DATADOG URL HERE)**
+> **(https://p.us5.datadoghq.com/sb/53587962-e19e-11f0-84dd-828a698ac737-c242a88befa5523c17dd02351e7d76a1?refresh_mode=sliding&from_ts=1767170598684&to_ts=1767184998684&live=true)**
 
 ##  The Solution
 **LLM Sentinel for Vertex AI** is an end-to-end observability and security monitoring system for Gemini-powered applications running on Google Vertex AI. It uses Datadog to detect latency degradation, prompt-injection attacks, and runtime anomalies with actionable incident context.
