@@ -71,3 +71,11 @@ async def support_chatbot(req: ChatRequest):
 @app.get("/health")
 def health_check():
     return {"status": "Sentinel Active", "version": "2.0-Observability-Enhanced"}
+
+@app.get("/")
+async def root():
+    return {
+        "status": "online",
+        "message": "LLM Sentinel Backend is active",
+        "docs": "/docs"
+    }
