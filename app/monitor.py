@@ -1,4 +1,3 @@
-# app/monitor.py
 import json
 import os
 
@@ -11,9 +10,7 @@ if not os.path.exists(LOG_FILE):
     print("❌ llm_logs.json not found. Run save_logs.py first.")
     exit(1) 
 
-# -------------------------
-# Load logs (JSON ARRAY)
-# ------------------------- 
+# Load logs (JSON ARRAY) 
 try:
     with open(LOG_FILE, "r", encoding="utf-8") as f:
         logs = json.load(f)
@@ -25,9 +22,7 @@ if not isinstance(logs, list) or not logs:
     print("❌ No valid logs found.")
     exit(1)
 
-# -------------------------
 # Monitoring logic
-# -------------------------
 total = len(logs)
 latencies = [l["latency_ms"] for l in logs if l.get("latency_ms") is not None]
 errors = [l for l in logs if l.get("error")]
@@ -38,9 +33,7 @@ avg_latency = sum(latencies) / len(latencies) if latencies else 0
 max_latency = max(latencies) if latencies else 0
 error_rate = (len(errors) / total) * 100 if total else 0
 
-# -------------------------
 # Output
-# -------------------------
 for i in injections:
     print(f"🚨 PROMPT INJECTION DETECTED → '{i['prompt']}'")
 

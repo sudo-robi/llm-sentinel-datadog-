@@ -1,12 +1,9 @@
-# save_logs.py
 import json
 from app.telemetry import logger
 from datetime import datetime
 
 # Example: store logs in a file
 log_file = "llm_logs.json"
-
-# We'll simulate some prompts
 prompts = [
     "Hello world",
     "Datadog observability test",

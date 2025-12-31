@@ -7,9 +7,7 @@ app = FastAPI(
     description="Enterprise AI Gateway with Fraud Detection, Policy Guardrails, and Observability"
 )
 
-# ----------------------------
 # Data Models
-# ----------------------------
 class ChatRequest(BaseModel):
     prompt: str
 
@@ -19,9 +17,7 @@ class ChatResponse(BaseModel):
     trace_id: str
     model: str
 
-# ----------------------------
 # 🛡️ Endpoint 1: Standard Chat
-# ----------------------------
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     """
@@ -47,9 +43,7 @@ async def chat(req: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# ----------------------------
 # 🤖 Endpoint 2: AI Customer Support Bot
-# ----------------------------
 @app.post("/support", response_model=ChatResponse)
 async def support_chatbot(req: ChatRequest):
     """
@@ -72,9 +66,8 @@ async def support_chatbot(req: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Support Bot unavailable")
 
-# ----------------------------
+
 # ✅ Health Check
-# ----------------------------
 @app.get("/health")
 def health_check():
     return {"status": "Sentinel Active", "version": "2.0-Observability-Enhanced"}

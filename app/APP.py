@@ -4,16 +4,15 @@ import streamlit as st
 import uuid
 import asyncio
 
-# --- 🛠️ PATH FIX FOR STREAMLIT CLOUD ---
+# PATH FIX FOR STREAMLIT CLOUD
 # This allows imports to work when running from the root or inside the app folder
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
 
-# Now import without the 'app.' prefix
 from llm import call_gemini 
 
-# --- Page Config ---
+# Page Config
 st.set_page_config(page_title="LLM Sentinel", layout="wide")
 
 # Initialize session state
@@ -22,7 +21,7 @@ if "messages" not in st.session_state:
 if "sentinel_logs" not in st.session_state:
     st.session_state.sentinel_logs = []
 
-# --- Sidebar: Sentinel Dashboard ---
+# Sidebar: Sentinel Dashboard 
 with st.sidebar:
     st.title("🛡️ Sentinel Control")
     st.markdown("---")
@@ -35,7 +34,7 @@ with st.sidebar:
         st.markdown(f"**[{log['time']}]** :{color}[{log['status']}]")
         st.caption(f"Trace: `{log['id']}`")
 
-# --- Main UI ---
+# Main UI
 st.title("🤖 Customer Support Chatbot")
 st.caption("Protected by LLM Sentinel Security Proxy")
 

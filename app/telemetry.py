@@ -4,27 +4,22 @@ import logging
 import uuid
 from datadog import initialize, statsd, api
 
-# ----------------------------
 # Datadog initialization
-# ----------------------------
 options = {
     'api_key': os.getenv("DATADOG_API_KEY"),
     'app_key': os.getenv("DATADOG_APP_KEY")
 }
 initialize(**options)
 
-# ----------------------------
 # Logger setup
-# ----------------------------
 logger = logging.getLogger("llm-sentinel")
 if not logger.handlers:
     log_handler = logging.StreamHandler()
     logger.addHandler(log_handler)
 logger.setLevel(logging.INFO)
 
-# ----------------------------
+
 # Enhanced Telemetry Logic
-# ----------------------------
 def record_metrics(prompt: str = None,
                    response: str = None,
                    usage: dict = None,
@@ -39,20 +34,20 @@ def record_metrics(prompt: str = None,
     - Contextual Alert Tags (Model, Snippet)
     """
     
-    # 1️⃣ Explicit Request ID / Trace Correlation
+    # Explicit Request ID / Trace Correlation
     trace_id = str(uuid.uuid4())[:13]
     model_id = usage.get("model", "gemini-2.5-flash") if usage else "gemini-2.5-flash"
 
-    # 2️⃣ Prompt Length vs. Response Length Metric
+    # Prompt Length vs. Response Length Metric
     p_len = len(prompt) if prompt else 1
     r_len = len(response) if response else 0
     length_ratio = round(r_len / p_len, 2)
 
-    # 3️⃣ Quality Proxy Signal: Token Throughput (TPS)
+    # Quality Proxy Signal: Token Throughput (TPS)
     tokens_out = usage.get("output_tokens", 0) if usage else 0
     tps = round(tokens_out / (latency_ms / 1000), 2) if latency_ms > 0 else 0
 
-    # 4️⃣ Contextual Tags (For Datadog Alert Content)
+    # Contextual Tags (For Datadog Alert Content)
     # Sanitize snippet for tag compatibility
     snippet = prompt[:40].replace(" ", "_").replace("\n", "") if prompt else "none"
     
@@ -65,7 +60,7 @@ def record_metrics(prompt: str = None,
         f"category:{security.get('category', 'clean') if security else 'clean'}"
     ]
 
-    # --- SEND DATADOG METRICS ---
+    # SEND DATADOG METRICS
     statsd.gauge("sentinel.llm.latency", latency_ms, tags=tags)
     statsd.gauge("sentinel.llm.length_ratio", length_ratio, tags=tags)
     statsd.gauge("sentinel.llm.tps", tps, tags=tags)
@@ -77,7 +72,7 @@ def record_metrics(prompt: str = None,
     if security and (security.get("injection_detected") or security.get("policy_violation")):
         statsd.increment("sentinel.llm.security_violation", tags=tags)
 
-    # --- CREATE DATADOG EVENT (For Incident/Alert) ---
+    # CREATE DATADOG EVENT (For Incident/Alert)
     if error or (security and security.get("risk") == "high"):
         api.Event.create(
             title=f"LLM Incident: {trace_id}",
@@ -89,7 +84,7 @@ def record_metrics(prompt: str = None,
             alert_type="error" if error else "warning"
         )
 
-    # 5️⃣ Local JSON log with full Trace Correlation
+    # Local JSON log with full Trace Correlation
     log_entry = {
         "timestamp": int(time.time()),
         "trace_id": trace_id,
