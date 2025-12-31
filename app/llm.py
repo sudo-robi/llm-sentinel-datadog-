@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from ddtrace import tracer  
 from tenacity import (
     retry,
     wait_random_exponential,
@@ -16,7 +17,7 @@ except ImportError:
 
 load_dotenv()
 
-#  Configuration
+# Configuration
 MODEL_ID = "gemini-2.0-flash"
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
@@ -38,33 +39,36 @@ async def _send_with_retry(final_prompt: str, system_instr: str = None):
             types.SafetySetting(category='HARM_CATEGORY_HATE_SPEECH', threshold='BLOCK_ONLY_HIGH'),
         ]
     )
-    return await client.aio.models.generate_content(
-        model=MODEL_ID,
-        contents=final_prompt,
-        config=config
-    )
+    
+    with tracer.trace("vertexai.request", service="llm-sentinel") as span:
+        span.set_tag("llm.provider", "google")
+        span.set_tag("llm.model", MODEL_ID)
+        span.set_tag("llm.prompt_length", len(final_prompt))
+        
+        response = await client.aio.models.generate_content(
+            model=MODEL_ID,
+            contents=final_prompt,
+            config=config
+        )
+        
+        if response and response.text:
+            span.set_tag("llm.response_length", len(response.text))
+            
+        return response
 
-# AI Fraud and Policy Checker (Updated)
+# AI Fraud and Policy Checker
 def analyze_prompt(prompt: str) -> dict:
     prompt_lower = prompt.lower()
-    
-    # Injection and Jailbreak Heuristics
+    # ... (rest of your existing analyze_prompt code) ...
     injection_keywords = ["ignore previous instructions", "system prompt", "dan mode", "jailbreak"]
     is_injection = any(k in prompt_lower for k in injection_keywords)
-
-    # Sensitive Data Detection 
     sensitive_patterns = ["ssn", "credit card", "password", "api key", "secret_key"]
     found_sensitive = [k for k in sensitive_patterns if k in prompt_lower]
     is_sensitive = len(found_sensitive) > 0
-
-    # Fraud Heuristics
     fraud_keywords = ["fake identity", "bank hack", "social security"]
     is_fraud = any(k in prompt_lower for k in fraud_keywords)
-
-    # Determine final risk and category
     risk_level = "low"
     category = "clean"
-
     if is_injection:
         risk_level = "high"
         category = "injection"
@@ -74,7 +78,6 @@ def analyze_prompt(prompt: str) -> dict:
     elif is_fraud:
         risk_level = "high"
         category = "fraud"
-
     return {
         "injection_detected": is_injection,
         "policy_violation": is_fraud or is_sensitive,
@@ -85,11 +88,9 @@ def analyze_prompt(prompt: str) -> dict:
 
 # Main Sentinel Logic
 async def call_gemini(prompt: str, is_support_chat: bool = False):
-    #Security Analysis (Runs before API call)
     security_result = analyze_prompt(prompt)
     usage = {"model": MODEL_ID, "input_tokens": 0, "output_tokens": 0}
 
-    # Proactive Block for High Risk (Injection, Fraud, or PII Leak)
     if security_result["risk"] == "high":
         response_text = f"Access Denied: Your request violates our safety policy ({security_result['category']})."
         trace_id = record_metrics(
@@ -102,17 +103,13 @@ async def call_gemini(prompt: str, is_support_chat: bool = False):
         )
         return response_text, usage, trace_id
 
-    # Setup Persona
     system_instr = "You are a helpful Customer Support assistant for LLM Sentinel." if is_support_chat else None
-    
     start_time = time.time()
     response_text = ""
     error = False
 
-    # Execution
     try:
         response = await _send_with_retry(prompt, system_instr=system_instr)
-        
         if response and response.text:
             response_text = response.text
         else:
@@ -129,7 +126,6 @@ async def call_gemini(prompt: str, is_support_chat: bool = False):
 
     latency_ms = int((time.time() - start_time) * 1000)
 
-    # RECORD TELEMETRY
     trace_id = record_metrics(
         prompt=prompt,
         response=response_text,

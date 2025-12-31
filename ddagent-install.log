@@ -1,0 +1,110 @@
+[34m
+* Datadog Agent install script v1.36.0
+[0m
+/usr/bin/systemctl
+[33mWarning: DD_AGENT_MAJOR_VERSION not set. Installing Datadog Agent version 6 by default.[0m
+[34m
+* Installing curl gnupg
+[0m
+Hit:1 https://packages.cloud.google.com/apt cloud-sdk InRelease
+Get:2 https://dl.google.com/linux/chrome/deb stable InRelease [1,825 B]
+Hit:3 https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev antigravity-debian InRelease
+Get:5 https://dl.google.com/linux/chrome/deb stable/main amd64 Packages [1,213 B]
+Get:4 http://kali.download/kali kali-rolling InRelease [34.0 kB]
+Get:6 http://kali.download/kali kali-rolling/main amd64 Packages [20.9 MB]
+Get:7 http://kali.download/kali kali-rolling/main amd64 Contents (deb) [52.5 MB]
+Get:8 http://kali.download/kali kali-rolling/contrib amd64 Packages [114 kB]
+Get:9 http://kali.download/kali kali-rolling/contrib amd64 Contents (deb) [255 kB]
+Get:10 http://kali.download/kali kali-rolling/non-free amd64 Packages [190 kB]
+Get:11 http://kali.download/kali kali-rolling/non-free amd64 Contents (deb) [904 kB]
+Ign:12 https://apt.datadoghq.com stable InRelease
+Ign:12 https://apt.datadoghq.com stable InRelease
+Ign:12 https://apt.datadoghq.com stable InRelease
+Err:12 https://apt.datadoghq.com stable InRelease
+  SSL connection failed: error:0A000126:SSL routines::unexpected eof while reading / Success [IP: 108.139.200.25 443]
+  Could not wait for server fd - select (11: Resource temporarily unavailable) [IP: 108.139.200.25 443]
+Fetched 74.9 MB in 2min 9s (579 kB/s)
+Reading package lists...
+W: Failed to fetch https://apt.datadoghq.com/dists/stable/InRelease  Could not wait for server fd - select (11: Resource temporarily unavailable) [IP: 108.139.200.25 443]
+W: Some index files failed to download. They have been ignored, or old ones used instead.
+Reading package lists...
+Building dependency tree...
+Reading state information...
+curl is already the newest version (8.17.0-3).
+gnupg is already the newest version (2.4.8-4).
+Solving dependencies...
+The following packages were automatically installed and are no longer required:
+  dkms gir1.2-girepository-2.0 libdisplay-info2 libgirepository-1.0-1
+  libgpgme11t64 libgpgmepp6t64 libgsoap-2.8.135 libinstpatch-1.0-2 liblzf1
+  libqt6help6 libqt6sql6 libqt6sql6-sqlite libqt6statemachine6 libqt6xml6
+  libtpms0 libvncserver1 libwireshark18 libwiretap15 libwsutil16
+  virtualbox-dkms
+Use 'sudo apt autoremove' to remove them.
+0 upgraded, 0 newly installed, 0 to remove and 611 not upgraded.
+[34m
+* Installing APT package sources for Datadog
+[0m
+gpg: key E6266D4AC0962C7D: "Datadog, Inc. APT key (2023-04-20) (APT key) <package+aptkey@datadoghq.com>" not changed
+gpg: Total number processed: 1
+gpg:              unchanged: 1
+gpg: key 0D826EB906462314: "Datadog, Inc. APT key (2024-05-15) (APT key) <package+aptkey@datadoghq.com>" not changed
+gpg: Total number processed: 1
+gpg:              unchanged: 1
+gpg: key E6266D4AC0962C7D: "Datadog, Inc. APT key (2023-04-20) (APT key) <package+aptkey@datadoghq.com>" not changed
+gpg: Total number processed: 1
+gpg:              unchanged: 1
+gpg: key 32637D44F14F620E: "Datadog, Inc. Master key (2020-09-08) <package+masterkey@datadoghq.com>" not changed
+gpg: Total number processed: 1
+gpg:              unchanged: 1
+gpg: key D3A80E30382E94DE: "Datadog, Inc <package@datadoghq.com>" not changed
+gpg: Total number processed: 1
+gpg:              unchanged: 1
+Ign:1 https://apt.datadoghq.com stable InRelease
+Ign:1 https://apt.datadoghq.com stable InRelease
+Ign:1 https://apt.datadoghq.com stable InRelease
+Err:1 https://apt.datadoghq.com stable InRelease
+  SSL connection failed: error:0A000126:SSL routines::unexpected eof while reading / Success [IP: 108.139.200.25 443]
+  Could not wait for server fd - select (11: Resource temporarily unavailable) [IP: 108.139.200.25 443]
+Reading package lists...
+W: Failed to fetch https://apt.datadoghq.com/dists/stable/InRelease  Could not wait for server fd - select (11: Resource temporarily unavailable) [IP: 108.139.200.25 443]
+W: Some index files failed to download. They have been ignored, or old ones used instead.
+  [33mInstalling package(s): datadog-agent datadog-signing-keys
+[0m
+Reading package lists...
+Building dependency tree...
+Reading state information...
+datadog-agent is already the newest version (1:7.73.2-1).
+datadog-signing-keys is already the newest version (1:1.4.0-1).
+Solving dependencies...
+The following packages were automatically installed and are no longer required:
+  dkms gir1.2-girepository-2.0 libdisplay-info2 libgirepository-1.0-1
+  libgpgme11t64 libgpgmepp6t64 libgsoap-2.8.135 libinstpatch-1.0-2 liblzf1
+  libqt6help6 libqt6sql6 libqt6sql6-sqlite libqt6statemachine6 libqt6xml6
+  libtpms0 libvncserver1 libwireshark18 libwiretap15 libwsutil16
+  virtualbox-dkms
+Use 'sudo apt autoremove' to remove them.
+0 upgraded, 0 newly installed, 0 to remove and 611 not upgraded.
+W: --force-yes is deprecated, use one of the options starting with --allow instead.
+[34m
+* Keeping old /etc/datadog-agent/datadog.yaml configuration file
+[0m
+/usr/bin/systemctl
+[34m* Starting the Datadog Agent...
+[0m
+[32m  Your Datadog Agent is running and functioning properly.
+[0m[32m  It will continue to run in the background and submit metrics to Datadog.
+[0m[32m  If you ever want to stop the Datadog Agent, run:
+
+      sudo systemctl stop datadog-agent
+
+  And to run it again run:
+
+      sudo systemctl start datadog-agent[0m
+
+curl: (6) Could not resolve host: instrumentation-telemetry-intake.datadoghq.com
+curl: (6) Could not resolve host: instrumentation-telemetry-intake.datadoghq.com
+curl: (6) Could not resolve host: instrumentation-telemetry-intake.datadoghq.com
+curl: (6) Could not resolve host: instrumentation-telemetry-intake.datadoghq.com
+curl: (6) Could not resolve host: instrumentation-telemetry-intake.datadoghq.com
+curl: (22) The requested URL returned error: 403
+Unable to send telemetry
