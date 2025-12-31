@@ -10,6 +10,7 @@ from tenacity import (
     stop_after_attempt,
     retry_if_exception 
 )
+
 try:
     from app.telemetry import record_metrics
 except ImportError:
@@ -19,16 +20,22 @@ load_dotenv()
 
 # Configuration
 MODEL_ID = "gemini-2.0-flash"
+
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Helpers
-def is_rate_limit_error(exception: Exception) -> bool:
-    return "429" in str(exception) or "RESOURCE_EXHAUSTED" in str(exception)
+def is_retryable_error(exception: Exception) -> bool:
+    """
+    Only retry on Rate Limits (429) or Server Errors (500).
+    Do NOT retry on 403 (Leaked Key) or 400 (Bad Request).
+    """
+    exc_str = str(exception).upper()
+    return "429" in exc_str or "RESOURCE_EXHAUSTED" in exc_str or "500" in exc_str
 
 @retry(
-    wait=wait_random_exponential(min=2, max=60),
-    stop=stop_after_attempt(3),
-    retry=retry_if_exception(is_rate_limit_error),
+    wait=wait_random_exponential(min=1, max=10),
+    stop=stop_after_attempt(2),
+    retry=retry_if_exception(is_retryable_error),
 )
 async def _send_with_retry(final_prompt: str, system_instr: str = None):
     config = types.GenerateContentConfig(
@@ -40,35 +47,45 @@ async def _send_with_retry(final_prompt: str, system_instr: str = None):
         ]
     )
     
+    # DATADOG TRACING BLOCK
     with tracer.trace("vertexai.request", service="llm-sentinel") as span:
         span.set_tag("llm.provider", "google")
         span.set_tag("llm.model", MODEL_ID)
         span.set_tag("llm.prompt_length", len(final_prompt))
         
-        response = await client.aio.models.generate_content(
-            model=MODEL_ID,
-            contents=final_prompt,
-            config=config
-        )
-        
-        if response and response.text:
-            span.set_tag("llm.response_length", len(response.text))
+        try:
+            response = await client.aio.models.generate_content(
+                model=MODEL_ID,
+                contents=final_prompt,
+                config=config
+            )
             
-        return response
+            if response and response.text:
+                span.set_tag("llm.response_length", len(response.text))
+            
+            return response
+
+        except Exception as e:
+            span.set_tag("error", True)
+            span.set_tag("error.msg", str(e))
+            raise e
 
 # AI Fraud and Policy Checker
 def analyze_prompt(prompt: str) -> dict:
     prompt_lower = prompt.lower()
-    # ... (rest of your existing analyze_prompt code) ...
     injection_keywords = ["ignore previous instructions", "system prompt", "dan mode", "jailbreak"]
     is_injection = any(k in prompt_lower for k in injection_keywords)
+    
     sensitive_patterns = ["ssn", "credit card", "password", "api key", "secret_key"]
     found_sensitive = [k for k in sensitive_patterns if k in prompt_lower]
     is_sensitive = len(found_sensitive) > 0
+    
     fraud_keywords = ["fake identity", "bank hack", "social security"]
     is_fraud = any(k in prompt_lower for k in fraud_keywords)
+    
     risk_level = "low"
     category = "clean"
+    
     if is_injection:
         risk_level = "high"
         category = "injection"
@@ -78,6 +95,7 @@ def analyze_prompt(prompt: str) -> dict:
     elif is_fraud:
         risk_level = "high"
         category = "fraud"
+        
     return {
         "injection_detected": is_injection,
         "policy_violation": is_fraud or is_sensitive,
@@ -121,10 +139,16 @@ async def call_gemini(prompt: str, is_support_chat: bool = False):
 
     except Exception as e:
         error = True
-        response_text = "Service temporarily unavailable (Inference Failure)."
-        print(f"🚨 API ERROR: {str(e)}")
+        error_msg = str(e)
+        if "403" in error_msg:
+            response_text = "Security Error: API Key rejected (Check Render Secrets)."
+        else:
+            response_text = "Service temporarily unavailable (Inference Failure)."
+        
+        print(f"🚨 SENTINEL ALERT: {error_msg}")
 
     latency_ms = int((time.time() - start_time) * 1000)
+
 
     trace_id = record_metrics(
         prompt=prompt,
